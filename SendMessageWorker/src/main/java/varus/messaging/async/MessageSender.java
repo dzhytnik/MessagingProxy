@@ -1,3 +1,5 @@
+package varus.messaging.async;
+
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 @FunctionalInterface
