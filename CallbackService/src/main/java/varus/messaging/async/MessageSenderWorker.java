@@ -3,6 +3,7 @@ package varus.messaging.async;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import varus.messaging.service.ConfigLoader;
 
 import java.util.Base64;
 
@@ -23,7 +24,7 @@ public class MessageSenderWorker{
         this.clientId = clientId;
     }
 
-    public void sendMessage(String textToSend, String phoneNumber, int channelId) throws UnirestException{
+    public int sendMessage(String textToSend, String phoneNumber, int channelId) throws UnirestException{
         MessageSender sender = null;
         String encodedBytes;
         if (username != null && password != null) {
@@ -38,21 +39,24 @@ public class MessageSenderWorker{
 
                 StringBuilder body = new StringBuilder("{");
                 body.append("\"phone_number\": ").append(phoneNumber).append(LINE_SEPARATOR);
-                
-                HttpResponse response = Unirest.post("https://api-v2.hyber.im/2157")
+
+                //HttpResponse response = Unirest.post("https://api-v2.hyber.im/2157")
+                HttpResponse response = Unirest.post(ConfigLoader.getInstance().getGmsuConfig().getPrimaryUrl())
                         .header("Content-Type", "application/json")
                         .header("Authorization", authorization)
                         .body(body.toString() + "extra_id\": \"AD-6640-7006\",\r\n\"callback_url\": \"https://send-dr-here.com\",\r\n\"start_time\": \"2019-12-28 10:52:00\",\r\n\"tag\": \"Campaign name\",\r\n\"channels\": [\r\n\"viber\",\r\n\"sms\"\r\n],\r\n\"channel_options\": {\r\n\"sms\": {\r\n\"text\":  " + textToSend + " ,\r\n\"alpha_name\": \"\",\r\n\"ttl\": 300\r\n},\r\n\"viber\": {\r\n\"text\": \"Text for Viber\",\r\n\"ttl\": 60,\r\n\"img\": \"http://olddogs.org/logo.png\",\r\n\"caption\": \"Old Dogs need you!\",\r\n\"action\": \"http://olddogs.org\"\r\n}\r\n}\r\n}")
                         .asString();
+                return response;
             };
 
         } else if (channelId == INFOBIP_CHANNEL){
             sender = () -> {
 
+                return null;
             };
         }
 
-        sender.sendMessage();
+        return sender.sendMessage().getStatus();
 
     }
 }
