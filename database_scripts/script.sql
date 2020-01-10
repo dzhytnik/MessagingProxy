@@ -7,6 +7,26 @@ CREATE DATABASE "VarusMessagingProxy"
     TABLESPACE = pg_default
     CONNECTION LIMIT = -1;
 
+CREATE SEQUENCE public.global_config_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+ALTER SEQUENCE public.global_config_id_seq
+    OWNER TO postgres;
+
+CREATE SEQUENCE public.gsm_provider_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+ALTER SEQUENCE public.gsm_provider_id_seq
+    OWNER TO postgres;
+
 CREATE TABLE public.global_config
 (
     id integer NOT NULL DEFAULT nextval('global_config_id_seq'::regclass),
