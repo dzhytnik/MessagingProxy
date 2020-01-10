@@ -1,16 +1,17 @@
 package varus.messaging.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import sun.security.provider.MD2;
 import varus.messaging.async.MessageSenderWorker;
+import varus.messaging.dao.bean.MessageLogRecord;
 import varus.messaging.service.bean.MessageDTO;
 import varus.messaging.service.bean.MessagesWrapper;
 
 import java.io.IOException;
+import java.sql.Time;
+import java.util.Date;
 
 @RestController
 public class MessageCallbackController {
@@ -20,6 +21,9 @@ public class MessageCallbackController {
 
     @Autowired
     private ProviderRepository providerRepository;
+
+    @Autowired
+    private MessageLogRepository messageLogRepository;
 
     @RequestMapping("/callback")
     public String callback() {
@@ -49,10 +53,16 @@ public class MessageCallbackController {
                     int status = worker.sendMessage(messageDto.getMessageText(),
                             phoneNumber, 1);
                     if (status != 200) {
+                        messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                                new Date(), status, "0"));
                         return "Failed to send a message. " + status;
                     }
+                    messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                            new Date(), 200, ""));
                 }
             } catch (UnirestException e) {
+                messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                        new Date(), -1, "0"));
                 return "Failed to send a message. " + e.getLocalizedMessage();
             }
 
