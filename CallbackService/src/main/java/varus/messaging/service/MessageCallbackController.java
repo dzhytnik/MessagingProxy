@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import varus.messaging.async.JMSClient;
 import varus.messaging.async.MessageSenderWorker;
 import varus.messaging.dao.bean.MessageLogRecord;
 import varus.messaging.service.bean.MessageDTO;
@@ -50,6 +51,7 @@ public class MessageCallbackController {
             MessageSenderWorker worker = new MessageSenderWorker("VARUS2_R", "dP2hch29", clientId);
             try {
                 for (String phoneNumber : messageDto.getRecepientList()) {
+                    JMSClient.getInstance().sendJMSMessage(messageDto.getMessageText());
                     int status = worker.sendMessage(messageDto.getMessageText(),
                             phoneNumber, 1);
                     if (status != 200) {
