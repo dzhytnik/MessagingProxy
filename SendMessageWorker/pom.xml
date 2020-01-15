@@ -13,12 +13,18 @@
     </properties>
 
     <artifactId>SendMessageWorker</artifactId>
+    <groupId>com.varus.messaging</groupId>
     <dependencies>
         <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
         <dependency>
             <groupId>com.mashape.unirest</groupId>
             <artifactId>unirest-java</artifactId>
             <version>1.4.9</version>
+        </dependency>
+        <dependency>
+            <groupId>com.varus.messaging</groupId>
+            <artifactId>CallbackService</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
     </dependencies>

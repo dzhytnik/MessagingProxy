@@ -1,4 +1,4 @@
-package varus.messaging.service;
+package messaging.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EntityScan(basePackages = {"varus.messaging.dao.bean"})
+@EntityScan(basePackages = {"messaging.dao.bean"})
 public class MessagingServiceApplication {
 	@Autowired
 	private ConfigRepository configRepository;

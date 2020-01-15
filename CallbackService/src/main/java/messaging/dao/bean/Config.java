@@ -1,4 +1,4 @@
-package varus.messaging.dao.bean;
+package messaging.dao.bean;
 
 import javax.persistence.*;
 

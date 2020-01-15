@@ -1,13 +1,11 @@
-package varus.messaging.async;
+package varus.messaging.client;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import varus.messaging.service.ConfigLoader;
+import messaging.service.ConfigLoader;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Date;
 

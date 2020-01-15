@@ -1,8 +1,9 @@
-package varus.messaging.service.bean;
+package messaging.service.bean;
 
 import java.util.List;
 
 public class MessageDTO {
+    Integer clientId;
     List<String> channels;
     List<String> recepientList;
     String messageText;
@@ -10,6 +11,14 @@ public class MessageDTO {
     String imageUrl;
     String buttonText;
     String buttonUrl;
+
+    public Integer getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Integer clientId) {
+        this.clientId = clientId;
+    }
 
     public List<String> getChannels() {
         return channels;
@@ -39,3 +48,4 @@ public class MessageDTO {
         return buttonUrl;
     }
 }
+

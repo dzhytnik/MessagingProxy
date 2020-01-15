@@ -1,7 +1,7 @@
-package varus.messaging.service;
+package messaging.service;
 
 import org.springframework.data.repository.CrudRepository;
-import varus.messaging.dao.bean.MessageLogRecord;
+import messaging.dao.bean.MessageLogRecord;
 
 public interface MessageLogRepository extends CrudRepository<MessageLogRecord, Long> {
 }

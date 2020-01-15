@@ -1,4 +1,4 @@
-package varus.messaging.async;
+package messaging.async;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -40,7 +40,7 @@ public class JMSClient {
 
     public void sendJMSMessage(String message) {
         try {
-            producer.send(new ProducerRecord<String, String>(VARUS_MESSAGING_TOPIC, Integer.toString(0), message)).get();
+            producer.send(new ProducerRecord<String, String>(VARUS_MESSAGING_TOPIC, message)).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {

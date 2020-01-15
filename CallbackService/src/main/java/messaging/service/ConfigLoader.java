@@ -1,10 +1,10 @@
-package varus.messaging.service;
+package messaging.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import varus.messaging.dao.bean.Config;
-import varus.messaging.dao.bean.GSMProviderConfig;
+import messaging.dao.bean.Config;
+import messaging.dao.bean.GSMProviderConfig;
 
 @Component
 public class ConfigLoader {
