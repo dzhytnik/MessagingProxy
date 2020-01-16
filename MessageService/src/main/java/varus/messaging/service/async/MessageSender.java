@@ -1,4 +1,4 @@
-package varus.messaging.client;
+package varus.messaging.service.async;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;

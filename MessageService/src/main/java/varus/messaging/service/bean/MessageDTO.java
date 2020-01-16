@@ -1,4 +1,4 @@
-package messaging.service.bean;
+package varus.messaging.service.bean;
 
 import java.util.List;
 

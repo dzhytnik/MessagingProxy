@@ -1,17 +1,25 @@
-package varus.messaging.client;
+package varus.messaging.service.async;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import messaging.service.ConfigLoader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import varus.messaging.service.ConfigLoader;
+import varus.messaging.service.bean.MessageDTO;
 
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
+@Component
 public class MessageSenderWorker{
+    @Autowired
+    ConfigLoader configLoader;
+
     public static final int GMSU_CHANNEL = 1;
     public static final int INFOBIP_CHANNEL = 2;
+
 
     private static final String LINE_SEPARATOR = ",\r\n";
 
@@ -26,7 +34,11 @@ public class MessageSenderWorker{
         this.clientId = clientId;
     }
 
-    public int sendMessage(String textToSend, String phoneNumber, int channelId) throws UnirestException{
+    public int sendMessage(MessageDTO messageDTO) throws UnirestException{
+        String textToSend = messageDTO.getMessageText();
+        String phoneNumber = messageDTO.getRecepientList().get(0);
+        int channelId = 1;//configLoader.getConfig().
+
         MessageSender sender = null;
         String encodedBytes;
         if (username != null && password != null) {

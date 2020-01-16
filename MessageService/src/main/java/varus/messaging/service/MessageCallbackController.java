@@ -1,12 +1,15 @@
-package messaging.service;
+package varus.messaging.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import varus.messaging.service.async.JMSClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import messaging.async.JMSClient;
-import messaging.service.bean.MessageDTO;
-import messaging.service.bean.MessagesWrapper;
+import varus.messaging.service.bean.MessageDTO;
+import varus.messaging.service.bean.MessagesWrapper;
+import varus.messaging.service.dao.ConfigRepository;
+import varus.messaging.service.dao.MessageLogRepository;
+import varus.messaging.service.dao.ProviderRepository;
 
 import java.io.IOException;
 
@@ -22,6 +25,10 @@ public class MessageCallbackController {
 
     @Autowired
     private MessageLogRepository messageLogRepository;
+
+    @Autowired
+    JMSClient jmsClient;
+
 
     @RequestMapping("/callback")
     public String callback() {
@@ -49,10 +56,14 @@ public class MessageCallbackController {
 
             try {
                 messageDto.setClientId(clientId);
-                JMSClient.getInstance().sendJMSMessage(objectMapper.writeValueAsString(messageDto));
+                jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto));
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
+        }
+
+        return "OK";
+
 
 /*
             MessageSenderWorker worker = new MessageSenderWorker("VARUS2_R", "dP2hch29", clientId);
@@ -76,8 +87,6 @@ public class MessageCallbackController {
             }
 */
 
-        }
-        return "OK";
     }
 
     @GetMapping("/getconfig")

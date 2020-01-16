@@ -1,7 +1,7 @@
-package messaging.service;
+package varus.messaging.service.dao;
 
 import org.springframework.data.repository.CrudRepository;
-import messaging.dao.bean.Config;
+import varus.messaging.dao.bean.Config;
 
 public interface ConfigRepository extends CrudRepository<Config, Long> {
 

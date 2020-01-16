@@ -1,10 +1,14 @@
-package messaging.service;
+package varus.messaging.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import messaging.dao.bean.Config;
-import messaging.dao.bean.GSMProviderConfig;
+import varus.messaging.dao.bean.Config;
+import varus.messaging.dao.bean.GSMProviderConfig;
+import varus.messaging.service.async.JMSConsumer;
+import varus.messaging.service.dao.ConfigRepository;
+import varus.messaging.service.dao.MessageLogRepository;
+import varus.messaging.service.dao.ProviderRepository;
 
 @Component
 public class ConfigLoader {
@@ -12,7 +16,13 @@ public class ConfigLoader {
     private ConfigRepository configRepository;
 
     @Autowired
+    private MessageLogRepository messageLogRepository;
+
+    @Autowired
     private ProviderRepository providerRepository;
+
+    @Autowired
+    JMSConsumer jmsConsumer;
 
 
     private static Config config;
@@ -21,11 +31,18 @@ public class ConfigLoader {
     private static ConfigLoader instance = null;
 
 
-    @Scheduled(fixedRate = 2_000)
+    @Scheduled(fixedRate = 200_000)
     public void loadConfiguration() {
         config = configRepository.findById(1l).get();
         infobipConfig = providerRepository.findByProviderName("Infobip");
         gmsuConfig = providerRepository.findByProviderName("gmsu");
+
+        //Starting consumer for messages. Messages are put into the queue by the controller.
+        try {
+            jmsConsumer.runConsumer();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public static ConfigLoader getInstance() {
