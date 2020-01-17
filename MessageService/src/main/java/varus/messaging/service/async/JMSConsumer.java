@@ -33,10 +33,6 @@ public class JMSConsumer {
     @Autowired
     MessageSenderWorker messageSender;
 
-    public JMSConsumer(MessageLogRepository messageLogRepository) {
-        this.messageLogRepository = messageLogRepository;
-    }
-
     private Consumer<Long, String> createConsumer() {
         final Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, JMSClient.VARUS_MESSAGING_SERVICE_KAFKA_SERVER);

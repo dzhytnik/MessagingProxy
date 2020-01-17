@@ -14,6 +14,8 @@ public class Config {
     private int numberOfAttempts;
     @Column(name="secondary_channel_timeslot")
     private int secondaryChannelTimeslot;
+    @Column(name="default_provider_id")
+    private int defaultProviderId;
 
     public int getNumberOfAttempts() {
         return numberOfAttempts;
@@ -21,5 +23,9 @@ public class Config {
 
     public int getSecondaryChannelTimeslot() {
         return secondaryChannelTimeslot;
+    }
+
+    public int getDefaultProviderId() {
+        return defaultProviderId;
     }
 }

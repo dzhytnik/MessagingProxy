@@ -28,16 +28,11 @@ public class MessageSenderWorker{
     private String authorization;
     private int clientId;
 
-    public MessageSenderWorker(String username, String password, int clientId) {
-        this.username = username;
-        this.password = password;
-        this.clientId = clientId;
-    }
 
     public int sendMessage(MessageDTO messageDTO) throws UnirestException{
         String textToSend = messageDTO.getMessageText();
         String phoneNumber = messageDTO.getRecepientList().get(0);
-        int channelId = 1;//configLoader.getConfig().
+        int channelId = configLoader.getConfig().getDefaultProviderId();
 
         MessageSender sender = null;
         String encodedBytes;
@@ -58,7 +53,7 @@ public class MessageSenderWorker{
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Date date = new Date();
 
-                HttpResponse response = Unirest.post(ConfigLoader.getInstance().getGmsuConfig().getPrimaryUrl())
+                HttpResponse response = Unirest.post(""/*configLoader.getGmsuConfig().getPrimaryUrl()*/)
                         .header("Content-Type", "application/json")
                         .header("Authorization", authorization)
                         .body(body.toString() + "\"extra_id\": \"AD-6640-7006\",\r\n\"callback_url\": \"https://send-dr-here.com\",\r\n\"start_time\": \"  " +

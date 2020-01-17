@@ -28,10 +28,9 @@ public class ConfigLoader {
     private static Config config;
     private static GSMProviderConfig infobipConfig;
     private static GSMProviderConfig gmsuConfig;
-    private static ConfigLoader instance = null;
 
 
-    @Scheduled(fixedRate = 200_000)
+    @Scheduled(fixedRate = 5000)
     public void loadConfiguration() {
         config = configRepository.findById(1l).get();
         infobipConfig = providerRepository.findByProviderName("Infobip");
@@ -43,13 +42,6 @@ public class ConfigLoader {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    public static ConfigLoader getInstance() {
-        if (instance == null) {
-            instance = new ConfigLoader();
-        }
-        return instance;
     }
 
     public Config getConfig() {
