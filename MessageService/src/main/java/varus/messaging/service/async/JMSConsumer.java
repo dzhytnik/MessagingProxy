@@ -71,8 +71,10 @@ public class JMSConsumer {
                 try {
                     MessageDTO messageDto = objectMapper.readValue(record.value(), MessageDTO.class);
                     messageSender.sendMessage(messageDto);
+/*
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                             new Date(), 0, "0"));
+*/
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 } catch (IOException e) {

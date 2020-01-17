@@ -1,11 +1,17 @@
 package varus.messaging.service.async;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import varus.messaging.service.ConfigLoader;
+import varus.messaging.service.bean.InfoBip.Destination;
+import varus.messaging.service.bean.InfoBip.InfoBipMessage;
+import varus.messaging.service.bean.InfoBip.TextMessage;
+import varus.messaging.service.bean.InfoBip.To;
 import varus.messaging.service.bean.MessageDTO;
 
 import java.text.SimpleDateFormat;
@@ -17,15 +23,12 @@ public class MessageSenderWorker{
     @Autowired
     ConfigLoader configLoader;
 
-    public static final int GMSU_CHANNEL = 1;
-    public static final int INFOBIP_CHANNEL = 2;
+    public static final int INFOBIP_CHANNEL = 1;
+    public static final int GMSU_CHANNEL = 2;
 
 
     private static final String LINE_SEPARATOR = ",\r\n";
 
-    private String username;
-    private String password;
-    private String authorization;
     private int clientId;
 
 
@@ -35,16 +38,16 @@ public class MessageSenderWorker{
         int channelId = configLoader.getConfig().getDefaultProviderId();
 
         MessageSender sender = null;
-        String encodedBytes;
-        if (username != null && password != null) {
-            authorization = username + ":" + password;
-            encodedBytes = Base64.getEncoder().encodeToString(authorization.getBytes());
-            authorization = "Basic " + encodedBytes;
-        }
 
 
         if (channelId == GMSU_CHANNEL) {
             sender = () -> {
+
+                String username = configLoader.getGmsuConfig().getUsername();
+                String password = configLoader.getGmsuConfig().getUserPassword();
+                String authorization = username + ":" + password;
+                String encodedBytes = Base64.getEncoder().encodeToString(authorization.getBytes());
+                authorization = "Basic " + encodedBytes;
 
                 StringBuilder body = new StringBuilder("{");
                 body.append("\"phone_number\": \"").append(phoneNumber).append("\"").append(LINE_SEPARATOR);
@@ -53,7 +56,7 @@ public class MessageSenderWorker{
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Date date = new Date();
 
-                HttpResponse response = Unirest.post(""/*configLoader.getGmsuConfig().getPrimaryUrl()*/)
+                HttpResponse response = Unirest.post(configLoader.getGmsuConfig().getPrimaryUrl())
                         .header("Content-Type", "application/json")
                         .header("Authorization", authorization)
                         .body(body.toString() + "\"extra_id\": \"AD-6640-7006\",\r\n\"callback_url\": \"https://send-dr-here.com\",\r\n\"start_time\": \"  " +
@@ -65,8 +68,24 @@ public class MessageSenderWorker{
 
         } else if (channelId == INFOBIP_CHANNEL){
             sender = () -> {
+                InfoBipMessage infoBipMessage = InfoBipMessage.builder().destination(
+                        Destination.builder().to(To.builder().phoneNumber(phoneNumber).build())
+                                .build()).sms(TextMessage.builder().text(textToSend).build())
+                        .viber(TextMessage.builder().text(textToSend).build())
+                        .scenarioKey("6CB8B6B51D49EA3049A0FA7BCA94AD51").build();
+                ObjectMapper objectMapper = new ObjectMapper();
 
-                return null;
+                HttpResponse response = null;
+                try {
+                    response = Unirest.post(configLoader.getInfobipConfig().getPrimaryUrl())
+                            .header("Content-Type", "application/json")
+                            .header("Authorization", "App c7bb509341ec624a0a41de7754356208-7d2e4651-6117-4a75-be96-2ceb5683fc72")
+                            .body(objectMapper.writeValueAsString(infoBipMessage))
+                            .asString();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                return response;
             };
         }
 
