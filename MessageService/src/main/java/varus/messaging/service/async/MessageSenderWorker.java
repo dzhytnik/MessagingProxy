@@ -8,11 +8,15 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import varus.messaging.service.ConfigLoader;
+import varus.messaging.service.bean.GMSu.ChannelMessage;
+import varus.messaging.service.bean.GMSu.ChannelOptions;
+import varus.messaging.service.bean.GMSu.GMSuMessage;
 import varus.messaging.service.bean.InfoBip.Destination;
 import varus.messaging.service.bean.InfoBip.InfoBipMessage;
 import varus.messaging.service.bean.InfoBip.TextMessage;
 import varus.messaging.service.bean.InfoBip.To;
 import varus.messaging.service.bean.MessageDTO;
+import varus.messaging.service.bean.common.BaseProviderMessage;
 
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -35,6 +39,7 @@ public class MessageSenderWorker{
     public int sendMessage(MessageDTO messageDTO) throws UnirestException{
         String textToSend = messageDTO.getMessageText();
         String phoneNumber = messageDTO.getRecepientList().get(0);
+
         int channelId = configLoader.getConfig().getDefaultProviderId();
 
         MessageSender sender = null;
@@ -49,12 +54,31 @@ public class MessageSenderWorker{
                 String encodedBytes = Base64.getEncoder().encodeToString(authorization.getBytes());
                 authorization = "Basic " + encodedBytes;
 
+
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Date date = new Date();
+
+                BaseProviderMessage providerMessage = GMSuMessage.builder()
+                        .phoneNumber(phoneNumber)
+                        .startTime(formatter.format(date))
+                        .tag("poipoi")
+                        .channelOptions(
+                                ChannelOptions.builder()
+                                        .sms(ChannelMessage.builder().text(textToSend).build())
+                                        .viber(ChannelMessage.builder().text(textToSend).build())
+                                .build())
+                        .build();
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    System.out.println("MessageSenderWorker.sendMessage" + objectMapper.writeValueAsString(providerMessage));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+
                 StringBuilder body = new StringBuilder("{");
                 body.append("\"phone_number\": \"").append(phoneNumber).append("\"").append(LINE_SEPARATOR);
 
                 //HttpResponse response = Unirest.post("https://api-v2.hyber.im/2157")
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                Date date = new Date();
 
                 HttpResponse response = Unirest.post(configLoader.getGmsuConfig().getPrimaryUrl())
                         .header("Content-Type", "application/json")
