@@ -37,6 +37,17 @@ CREATE SEQUENCE public.message_log_id_seq
 ALTER SEQUENCE public.message_log_id_seq
     OWNER TO postgres;
 
+
+CREATE SEQUENCE public.client_config_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+ALTER SEQUENCE public.client_config_id_seq
+    OWNER TO postgres;
+
 CREATE TABLE public.global_config
 (
     id integer NOT NULL DEFAULT nextval('global_config_id_seq'::regclass),
@@ -80,4 +91,19 @@ CREATE TABLE public.message_log
 TABLESPACE pg_default;
 
 ALTER TABLE public.message_log
+    OWNER to postgres;
+
+CREATE TABLE public.client_config
+(
+    id integer NOT NULL DEFAULT nextval('client_config_id_seq'::regclass),
+    client_name character varying(100) COLLATE pg_catalog."default",
+    number_of_attempts numeric,
+    priority numeric,
+    failover_sms_allowed boolean,
+    CONSTRAINT client_config_pkey PRIMARY KEY (id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public.client_config
     OWNER to postgres;

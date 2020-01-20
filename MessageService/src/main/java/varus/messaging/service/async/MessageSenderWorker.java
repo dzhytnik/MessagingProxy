@@ -16,6 +16,7 @@ import varus.messaging.service.bean.InfoBip.InfoBipMessage;
 import varus.messaging.service.bean.InfoBip.TextMessage;
 import varus.messaging.service.bean.InfoBip.To;
 import varus.messaging.service.bean.MessageDTO;
+import varus.messaging.service.bean.MessageSentStatus;
 import varus.messaging.service.bean.common.BaseProviderMessage;
 
 import java.text.SimpleDateFormat;
@@ -23,7 +24,7 @@ import java.util.Base64;
 import java.util.Date;
 
 @Component
-public class MessageSenderWorker{
+public class MessageSenderWorker implements MessageSender{
     @Autowired
     ConfigLoader configLoader;
 
@@ -36,18 +37,17 @@ public class MessageSenderWorker{
     private int clientId;
 
 
-    public int sendMessage(MessageDTO messageDTO) throws UnirestException{
+    public MessageSentStatus sendMessage(MessageDTO messageDTO) throws UnirestException{
         String textToSend = messageDTO.getMessageText();
         String phoneNumber = messageDTO.getRecepientList().get(0);
 
         int channelId = configLoader.getConfig().getDefaultProviderId();
 
         MessageSender sender = null;
+        HttpResponse response = null;
 
 
         if (channelId == GMSU_CHANNEL) {
-            sender = () -> {
-
                 String username = configLoader.getGmsuConfig().getUsername();
                 String password = configLoader.getGmsuConfig().getUserPassword();
                 String authorization = username + ":" + password;
@@ -61,7 +61,7 @@ public class MessageSenderWorker{
                 BaseProviderMessage providerMessage = GMSuMessage.builder()
                         .phoneNumber(phoneNumber)
                         .startTime(formatter.format(date))
-                        .tag("poipoi")
+                        .tag(messageDTO.getTag())
                         .channelOptions(
                                 ChannelOptions.builder()
                                         .sms(ChannelMessage.builder().text(textToSend).build())
@@ -80,18 +80,15 @@ public class MessageSenderWorker{
 
                 //HttpResponse response = Unirest.post("https://api-v2.hyber.im/2157")
 
-                HttpResponse response = Unirest.post(configLoader.getGmsuConfig().getPrimaryUrl())
+                response = Unirest.post(configLoader.getGmsuConfig().getPrimaryUrl())
                         .header("Content-Type", "application/json")
                         .header("Authorization", authorization)
                         .body(body.toString() + "\"extra_id\": \"AD-6640-7006\",\r\n\"callback_url\": \"https://send-dr-here.com\",\r\n\"start_time\": \"  " +
                                 formatter.format(date) +
                                 "\",\r\n\"tag\": \"Campaign name\",\r\n\"channels\": [\"sms\"\r\n],\r\n\"channel_options\": {\r\n\"sms\": {\r\n\"text\":  \"" + textToSend + "\" ,\r\n\"alpha_name\": \"\",\r\n\"ttl\": 300\r\n}\r\n}\r\n}")
                         .asString();
-                return response;
-            };
 
         } else if (channelId == INFOBIP_CHANNEL){
-            sender = () -> {
                 InfoBipMessage infoBipMessage = InfoBipMessage.builder().destination(
                         Destination.builder().to(To.builder().phoneNumber(phoneNumber).build())
                                 .build()).sms(TextMessage.builder().text(textToSend).build())
@@ -99,7 +96,6 @@ public class MessageSenderWorker{
                         .scenarioKey("6CB8B6B51D49EA3049A0FA7BCA94AD51").build();
                 ObjectMapper objectMapper = new ObjectMapper();
 
-                HttpResponse response = null;
                 try {
                     response = Unirest.post(configLoader.getInfobipConfig().getPrimaryUrl())
                             .header("Content-Type", "application/json")
@@ -109,11 +105,8 @@ public class MessageSenderWorker{
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
-                return response;
-            };
         }
 
-        return sender.sendMessage().getStatus();
-
+        return MessageSentStatus.builder().sentStatus(response.getStatus()).messageId("").build();
     }
 }

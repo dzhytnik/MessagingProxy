@@ -2,9 +2,11 @@ package varus.messaging.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import varus.messaging.service.async.JMSClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import varus.messaging.service.async.RabbitClient;
 import varus.messaging.service.bean.MessageDTO;
 import varus.messaging.service.bean.MessagesWrapper;
 import varus.messaging.service.dao.ConfigRepository;
@@ -27,7 +29,7 @@ public class MessageCallbackController {
     private MessageLogRepository messageLogRepository;
 
     @Autowired
-    JMSClient jmsClient;
+    RabbitClient jmsClient;
 
 
     @RequestMapping("/callback")
@@ -36,7 +38,7 @@ public class MessageCallbackController {
     }
 
     @PostMapping("/sendMessage/{clientId}")
-    public String sendMessage(@RequestBody String message, @PathVariable int clientId) {
+    public String sendMessage(@RequestBody String message, @PathVariable long clientId) {
         //TODO: Add check for client id is present in the config db. Return error 400 if not
 
 

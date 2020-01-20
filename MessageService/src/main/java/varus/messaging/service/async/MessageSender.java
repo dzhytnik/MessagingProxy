@@ -2,8 +2,9 @@ package varus.messaging.service.async;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import varus.messaging.service.bean.MessageDTO;
+import varus.messaging.service.bean.MessageSentStatus;
 
-@FunctionalInterface
 public interface MessageSender {
-    HttpResponse sendMessage() throws UnirestException;
+    MessageSentStatus sendMessage(MessageDTO messageDTO) throws UnirestException;
 }

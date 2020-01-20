@@ -3,7 +3,8 @@ package varus.messaging.service.bean;
 import java.util.List;
 
 public class MessageDTO {
-    Integer clientId;
+    Long clientId;
+    Integer retryCount;
     List<String> channels;
     List<String> recepientList;
     String messageText;
@@ -12,11 +13,11 @@ public class MessageDTO {
     String buttonText;
     String buttonUrl;
 
-    public Integer getClientId() {
+    public Long getClientId() {
         return clientId;
     }
 
-    public void setClientId(Integer clientId) {
+    public void setClientId(Long clientId) {
         this.clientId = clientId;
     }
 
@@ -46,6 +47,14 @@ public class MessageDTO {
 
     public String getButtonUrl() {
         return buttonUrl;
+    }
+
+    public Integer getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(Integer retryCount) {
+        this.retryCount = retryCount;
     }
 }
 
