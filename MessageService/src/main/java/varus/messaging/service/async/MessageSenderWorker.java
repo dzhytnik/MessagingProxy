@@ -8,6 +8,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import varus.messaging.service.ConfigLoader;
+import varus.messaging.service.MessagingServiceAppState;
 import varus.messaging.service.bean.GMSu.ChannelMessage;
 import varus.messaging.service.bean.GMSu.ChannelOptions;
 import varus.messaging.service.bean.GMSu.GMSuMessage;
@@ -28,6 +29,9 @@ public class MessageSenderWorker implements MessageSender{
     @Autowired
     ConfigLoader configLoader;
 
+    @Autowired
+    MessagingServiceAppState appState;
+
     public static final int INFOBIP_CHANNEL = 1;
     public static final int GMSU_CHANNEL = 2;
 
@@ -41,7 +45,7 @@ public class MessageSenderWorker implements MessageSender{
         String textToSend = messageDTO.getMessageText();
         String phoneNumber = messageDTO.getRecepientList().get(0);
 
-        int channelId = configLoader.getConfig().getDefaultProviderId();
+        long channelId = appState.getCurrentProviderId();
 
         MessageSender sender = null;
         HttpResponse response = null;

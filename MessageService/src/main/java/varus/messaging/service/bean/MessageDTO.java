@@ -4,7 +4,7 @@ import java.util.List;
 
 public class MessageDTO {
     Long clientId;
-    Integer retryCount;
+    Integer retryCount = 0;
     List<String> channels;
     List<String> recepientList;
     String messageText;
@@ -53,8 +53,8 @@ public class MessageDTO {
         return retryCount;
     }
 
-    public void setRetryCount(Integer retryCount) {
-        this.retryCount = retryCount;
+    public void incrRetryCount() {
+        this.retryCount++;
     }
 }
 
