@@ -7,15 +7,15 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import varus.messaging.service.dao.ConfigRepository;
 
+import javax.persistence.MappedSuperclass;
+
 @SpringBootApplication
 @EnableScheduling
 @EntityScan(basePackages = {"varus.messaging.dao.bean"})
 public class MessagingServiceApplication {
-	@Autowired
-	private ConfigRepository configRepository;
-
 	public static void main(String[] args) {
 		SpringApplication.run(MessagingServiceApplication.class, args);
 	}
+
 
 }

@@ -15,7 +15,7 @@ public class Config {
     @Column(name="secondary_channel_timeslot")
     private int secondaryChannelTimeslot;
     @Column(name="default_provider_id")
-    private int defaultProviderId;
+    private Long defaultProviderId;
 
     public int getNumberOfAttempts() {
         return numberOfAttempts;
@@ -25,7 +25,7 @@ public class Config {
         return secondaryChannelTimeslot;
     }
 
-    public int getDefaultProviderId() {
+    public Long getDefaultProviderId() {
         return defaultProviderId;
     }
 }
