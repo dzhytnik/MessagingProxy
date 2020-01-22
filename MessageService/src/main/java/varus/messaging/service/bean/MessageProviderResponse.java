@@ -6,7 +6,8 @@ import lombok.Data;
 
 @Data
 @Builder
-public class MessageSentStatus {
-    int sentStatus;
+public class MessageProviderResponse {
+    long responseCode;
+    long statusCode;
     String messageId;
 }

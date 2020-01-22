@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Singular;
 import varus.messaging.service.bean.common.BaseProviderMessage;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class GMSuMessage implements BaseProviderMessage {
     String startTime;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String tag;
+    @Singular
     List<String> channels;
     @JsonProperty("channel_options")
     ChannelOptions channelOptions;

@@ -5,7 +5,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import varus.messaging.dao.bean.Config;
 import varus.messaging.dao.bean.GSMProviderConfig;
-import varus.messaging.service.async.JMSKafkaConsumer;
 import varus.messaging.service.async.RabbitConsumer;
 import varus.messaging.service.dao.ConfigRepository;
 import varus.messaging.service.dao.MessageLogRepository;

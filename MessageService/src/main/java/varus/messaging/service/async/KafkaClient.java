@@ -6,7 +6,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 @Component
 public class KafkaClient implements JMSClient {

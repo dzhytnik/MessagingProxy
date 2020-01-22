@@ -1,5 +1,6 @@
 package varus.messaging.dao.bean;
 
+
 import javax.persistence.*;
 
 @Entity(name="client_config")

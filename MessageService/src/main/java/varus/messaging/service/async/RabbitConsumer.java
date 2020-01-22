@@ -8,23 +8,19 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 import varus.messaging.dao.bean.ClientConfig;
 import varus.messaging.dao.bean.Config;
 import varus.messaging.dao.bean.MessageLogRecord;
 import varus.messaging.service.MessagingServiceAppState;
 import varus.messaging.service.bean.MessageDTO;
-import varus.messaging.service.bean.MessageSentStatus;
+import varus.messaging.service.bean.MessageProviderResponse;
 import varus.messaging.service.dao.ClientConfigRepository;
 import varus.messaging.service.dao.ConfigRepository;
 import varus.messaging.service.dao.MessageLogRepository;
 import varus.messaging.service.dao.ProviderRepository;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
@@ -76,11 +72,11 @@ public class RabbitConsumer implements JMSConsumer {
         ObjectMapper objectMapper = new ObjectMapper();
         MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
         try {
-            MessageSentStatus messageSentStatus = messageSender.sendMessage(messageDto);
+            MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
             ClientConfig clientConfig = clientConfigRepository.findById(messageDto.getClientId()).get();
             Config config = configRepository.findById(1L).get();
 
-            if (messageSentStatus.getSentStatus() != HttpStatus.SC_OK) {
+            if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK) {
 
                 if (messageDto.getRetryCount() < clientConfig.getNumberOfAttempts()) {
                     //Increment retry counter for a provider. GLoval retry count is specified for all providers.
@@ -100,12 +96,12 @@ public class RabbitConsumer implements JMSConsumer {
                     jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto));
 
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
-                            new Date(), messageSentStatus.getSentStatus(), "0"));
+                            new Date(), messageSentStatus.getResponseCode(), "0"));
 
 
                 } else {
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
-                            new Date(), messageSentStatus.getSentStatus(), messageSentStatus.getMessageId()));
+                            new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
                 }
 
                 //TODO Acquire message delivery status
@@ -118,6 +114,8 @@ public class RabbitConsumer implements JMSConsumer {
                         switchProvider();
                     }
                 }
+                messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                        new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
             }
         } catch (UnirestException e) {
             e.printStackTrace();

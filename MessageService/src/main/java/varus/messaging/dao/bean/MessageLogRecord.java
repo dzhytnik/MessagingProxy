@@ -16,11 +16,11 @@ public class MessageLogRecord {
     @Column(name="date_stamp")
     Date date;
     @Column(name="status")
-    int sendingStatus;
+    long sendingStatus;
     @Column(name="message_id")
     String messageId;
 
-    public MessageLogRecord(String recipientList, String message, Date date, int sendingStatus, String messageId) {
+    public MessageLogRecord(String recipientList, String message, Date date, long sendingStatus, String messageId) {
         this.recipientList = recipientList;
         this.message = message;
         this.date = date;

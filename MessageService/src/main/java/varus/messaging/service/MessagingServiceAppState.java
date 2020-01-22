@@ -4,7 +4,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import varus.messaging.service.dao.ConfigRepository;
-import varus.messaging.service.dao.ProviderRepository;
 
 import java.util.Date;
 
