@@ -22,6 +22,8 @@ import varus.messaging.service.dao.ProviderRepository;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 @Service
@@ -48,6 +50,7 @@ public class RabbitConsumer implements JMSConsumer {
     MessagingServiceAppState appState;
 
     private static final String QUEUE_NAME = "varus-messaging-queue";
+    private static final String REPORT_QUEUE_NAME = "varus-messaging-report--queue";
 
     @Override
     public void runConsumer() throws InterruptedException {
@@ -57,8 +60,13 @@ public class RabbitConsumer implements JMSConsumer {
         try {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
+
             channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+            channel.basicConsume(QUEUE_NAME, true, highPriorityDeliverCallback, consumerTag -> { });
+
+            channel.queueDeclare(REPORT_QUEUE_NAME, false, false, false, null);
+            channel.basicConsume(REPORT_QUEUE_NAME, true,lowPriorityDeliverCallback, consumerTag -> { });
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TimeoutException e) {
@@ -67,7 +75,14 @@ public class RabbitConsumer implements JMSConsumer {
 
     }
 
-    private DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+    private DeliverCallback lowPriorityDeliverCallback = (consumerTag, delivery) -> {
+        String message = new String(delivery.getBody(), "UTF-8");
+        ObjectMapper objectMapper = new ObjectMapper();
+        System.out.println("RabbitConsumer. Low priority");
+
+    };
+
+    private DeliverCallback highPriorityDeliverCallback = (consumerTag, delivery) -> {
         String message = new String(delivery.getBody(), "UTF-8");
         ObjectMapper objectMapper = new ObjectMapper();
         MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
@@ -93,7 +108,7 @@ public class RabbitConsumer implements JMSConsumer {
                     //Each client should have each own retry count
                     messageDto.incrRetryCount();
 
-                    jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto));
+                    jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
 
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                             new Date(), messageSentStatus.getResponseCode(), "0"));
@@ -113,6 +128,10 @@ public class RabbitConsumer implements JMSConsumer {
                     if (milis / 1000 / 60 > config.getSecondaryChannelTimeslot()) {
                         switchProvider();
                     }
+                }
+                if (messageSentStatus.getMessageId() != null) {
+
+                    jmsClient.sendJMSMessage("");
                 }
                 messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                         new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));

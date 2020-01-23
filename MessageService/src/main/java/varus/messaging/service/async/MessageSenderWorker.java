@@ -12,6 +12,7 @@ import varus.messaging.service.MessagingServiceAppState;
 import varus.messaging.service.bean.GMSu.ChannelMessage;
 import varus.messaging.service.bean.GMSu.ChannelOptions;
 import varus.messaging.service.bean.GMSu.GMSuMessage;
+import varus.messaging.service.bean.GMSu.GMSuResponse;
 import varus.messaging.service.bean.InfoBip.*;
 import varus.messaging.service.bean.MessageDTO;
 import varus.messaging.service.bean.MessageProviderResponse;
@@ -36,6 +37,12 @@ public class MessageSenderWorker implements MessageSender{
 
     private static final String LINE_SEPARATOR = ",\r\n";
 
+    private final long INFOBIP_STATUS_PENDING = 1;
+    private final long INFOBIP_STATUS_UNDELIVERABLE = 2;
+    private final long INFOBIP_STATUS_DELIVERED = 3;
+    private final long INFOBIP_STATUS_EXPIRED = 4;
+    private final long INFOBIP_STATUS_REJECTED = 5;
+
     private int clientId;
 
 
@@ -48,6 +55,7 @@ public class MessageSenderWorker implements MessageSender{
         MessageSender sender = null;
         HttpResponse response = null;
         String messageId = "";
+        long messageSentStatus = 0;
 
 
         if (channelId == GMSU_CHANNEL) {
@@ -68,8 +76,8 @@ public class MessageSenderWorker implements MessageSender{
                     .tag(messageDTO.getTag())
                     .channelOptions(
                             ChannelOptions.builder()
-                                    .sms(ChannelMessage.builder().text(textToSend).build())
-                                    .viber(ChannelMessage.builder().text(textToSend).build())
+                                    .sms(ChannelMessage.builder().text(textToSend).ttl(300L).build())
+                                    .viber(ChannelMessage.builder().text(textToSend).ttl(300L).build())
                             .build())
                     .channels(messageDTO.getChannels())
                     .build();
@@ -81,7 +89,15 @@ public class MessageSenderWorker implements MessageSender{
                         .header("Authorization", authorization)
                         .body(objectMapper.writeValueAsString(providerMessage))
                         .asString();
+                //GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
+                GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"aab6c4eb-8417-401b-a6f1-ae98a443d575\"}", GMSuResponse.class);
+                if (gmsuResponse.getMessageId() != null) {
+                    messageId = gmsuResponse.getMessageId();
+                    messageSentStatus = 1;
+                }
             } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -100,7 +116,13 @@ public class MessageSenderWorker implements MessageSender{
                         .body(objectMapper.writeValueAsString(infoBipMessage))
                         .asString();
                 OmniResponse omniResponse = objectMapper.readValue(response.getBody().toString(), OmniResponse.class);
-                messageId = omniResponse.getMessages().get(0).getMessageId();
+                long messageSentStatusGroupId = omniResponse.getMessages().get(0).getStatus().getGroupId();
+                //Check if message was enqueued or delivered by the Infobip provider
+                //In that case we will need to acquire its status
+                if (messageSentStatusGroupId == INFOBIP_STATUS_PENDING || messageSentStatusGroupId == INFOBIP_STATUS_DELIVERED) {
+                    messageId = omniResponse.getMessages().get(0).getMessageId();
+                    messageSentStatus = 1;
+                }
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -108,6 +130,9 @@ public class MessageSenderWorker implements MessageSender{
             }
         }
 
-        return MessageProviderResponse.builder().responseCode(response.getStatus()).messageId(messageId).build();
+        return MessageProviderResponse.builder()
+                .responseCode(response.getStatus())
+                .messageId(messageId)
+                .statusCode(messageSentStatus).build();
     }
 }

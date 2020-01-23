@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import varus.messaging.service.async.JMSClient;
 import varus.messaging.service.async.RabbitClient;
 import varus.messaging.service.bean.MessageDTO;
 import varus.messaging.service.bean.MessagesWrapper;
@@ -29,12 +30,6 @@ public class MessageCallbackController {
     @Autowired
     RabbitClient jmsClient;
 
-
-    @RequestMapping("/callback")
-    public String callback() {
-        return "OK";
-    }
-
     @PostMapping("/sendMessage/{clientId}")
     public String sendMessage(@RequestBody String message, @PathVariable long clientId) {
         //TODO: Add check for client id is present in the config db. Return error 400 if not
@@ -52,7 +47,7 @@ public class MessageCallbackController {
         for (MessageDTO messageDto : messages.getMessages()) {
             try {
                 messageDto.setClientId(clientId);
-                jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto));
+                jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }

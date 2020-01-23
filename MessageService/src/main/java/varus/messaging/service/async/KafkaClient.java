@@ -32,7 +32,7 @@ public class KafkaClient implements JMSClient {
         producer = new KafkaProducer<>(props);
     }
 
-    public void sendJMSMessage(String message) {
+    public void sendJMSMessage(String message, int priority) {
         producer.send(new ProducerRecord<String, String>(VARUS_MESSAGING_TOPIC, message));
     }
 
