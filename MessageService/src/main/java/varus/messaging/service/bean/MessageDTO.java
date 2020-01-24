@@ -13,6 +13,9 @@ public class MessageDTO {
     String buttonText;
     String buttonUrl;
 
+    Long providerId;
+    String messageId;
+
     public Long getClientId() {
         return clientId;
     }
@@ -51,6 +54,22 @@ public class MessageDTO {
 
     public Integer getRetryCount() {
         return retryCount;
+    }
+
+    public Long getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(Long providerId) {
+        this.providerId = providerId;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 
     public void incrRetryCount() {

@@ -1,6 +1,8 @@
 package varus.messaging.service.async;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -14,6 +16,7 @@ import varus.messaging.service.bean.GMSu.ChannelOptions;
 import varus.messaging.service.bean.GMSu.GMSuMessage;
 import varus.messaging.service.bean.GMSu.GMSuResponse;
 import varus.messaging.service.bean.InfoBip.*;
+import varus.messaging.service.bean.InfoBip.InfoBipReport.DeliveryReportResponse;
 import varus.messaging.service.bean.MessageDTO;
 import varus.messaging.service.bean.MessageProviderResponse;
 import varus.messaging.service.bean.common.BaseProviderMessage;
@@ -22,9 +25,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
-public class MessageSenderWorker implements MessageSender{
+public class MessageSenderWorker extends BaseMessageSender{
     @Autowired
     ConfigLoader configLoader;
 
@@ -52,20 +57,12 @@ public class MessageSenderWorker implements MessageSender{
 
         long channelId = appState.getCurrentProviderId();
 
-        MessageSender sender = null;
         HttpResponse response = null;
         String messageId = "";
         long messageSentStatus = 0;
 
 
         if (channelId == GMSU_CHANNEL) {
-            String username = configLoader.getGmsuConfig().getUsername();
-            String password = configLoader.getGmsuConfig().getUserPassword();
-            String authorization = username + ":" + password;
-            String encodedBytes = Base64.getEncoder().encodeToString(authorization.getBytes());
-            authorization = "Basic " + encodedBytes;
-
-
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date date = new Date();
 
@@ -85,12 +82,15 @@ public class MessageSenderWorker implements MessageSender{
 
             try {
                 response = Unirest.post(configLoader.getGmsuConfig().getPrimaryUrl())
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", authorization)
+                        .headers(constructGmsuHeaders())
                         .body(objectMapper.writeValueAsString(providerMessage))
                         .asString();
-                //GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
-                GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"aab6c4eb-8417-401b-a6f1-ae98a443d575\"}", GMSuResponse.class);
+                //TODO
+                //TODO
+                //TODO
+                //Uncomment this!!! Now stubbed due to GMSu inaccessibility
+                GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
+                //GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"aab6c4eb-8417-401b-a6f1-ae98a443d575\"}", GMSuResponse.class);
                 if (gmsuResponse.getMessageId() != null) {
                     messageId = gmsuResponse.getMessageId();
                     messageSentStatus = 1;
@@ -104,7 +104,7 @@ public class MessageSenderWorker implements MessageSender{
             }
 
         } else if (channelId == INFOBIP_CHANNEL){
-            InfoBipMessage infoBipMessage = InfoBipMessage.builder().destination(
+            BaseProviderMessage infoBipMessage = InfoBipMessage.builder().destination(
                     Destination.builder().to(To.builder().phoneNumber(phoneNumber).build())
                             .build()).sms(TextMessage.builder().text(textToSend).build())
                     .viber(TextMessage.builder().text(textToSend).build())
@@ -113,8 +113,7 @@ public class MessageSenderWorker implements MessageSender{
 
             try {
                 response = Unirest.post(configLoader.getInfobipConfig().getPrimaryUrl())
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "App c7bb509341ec624a0a41de7754356208-7d2e4651-6117-4a75-be96-2ceb5683fc72")
+                        .headers(constructInfobipHeaders())
                         .body(objectMapper.writeValueAsString(infoBipMessage))
                         .asString();
                 OmniResponse omniResponse = objectMapper.readValue(response.getBody().toString(), OmniResponse.class);
@@ -139,4 +138,36 @@ public class MessageSenderWorker implements MessageSender{
                 .messageId(messageId)
                 .statusCode(messageSentStatus).build();
     }
+
+    @Override
+    void requestDeliveryReport(MessageDTO messageDTO) {
+        HttpResponse<String> response = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        long channelId = messageDTO.getProviderId();
+        if (channelId == GMSU_CHANNEL) {
+
+        } else if (channelId == INFOBIP_CHANNEL) {
+
+            try {
+                response = Unirest.get(configLoader.getInfobipConfig().getSecondaryUrl() + "?messageId=" + messageDTO.getMessageId())
+                        .headers(constructInfobipHeaders())
+                        .asString();
+                DeliveryReportResponse deliveryReportResponse = objectMapper.readValue(response.getBody(),
+                        DeliveryReportResponse.class);
+
+                System.out.println("MessageSenderWorker.requestDeliveryReport" + deliveryReportResponse.toString());
+            } catch (UnirestException e) {
+                e.printStackTrace();
+            } catch (JsonParseException e) {
+                e.printStackTrace();
+            } catch (JsonMappingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 }

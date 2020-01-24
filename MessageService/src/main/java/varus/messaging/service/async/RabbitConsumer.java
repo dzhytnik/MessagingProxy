@@ -78,20 +78,25 @@ public class RabbitConsumer implements JMSConsumer {
 
     private DeliverCallback deliverCallback = (consumerTag, delivery) -> {
         int priority = delivery.getProperties().getPriority();
+
+        String message = new String(delivery.getBody(), "UTF-8");
+        ObjectMapper objectMapper = new ObjectMapper();
+        MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
+
         switch (priority) {
             case JMSClient.HIGH_PRIORITY: case JMSClient.MEDIUM_PRIORITY:
 
-                String message = new String(delivery.getBody(), "UTF-8");
-                ObjectMapper objectMapper = new ObjectMapper();
-                MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
-                MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
+
                 ClientConfig clientConfig = clientConfigRepository.findById(messageDto.getClientId()).get();
                 Config config = configRepository.findById(1L).get();
+
+                MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
+
 
                 if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK) {
 
                     if (messageDto.getRetryCount() < clientConfig.getNumberOfAttempts()) {
-                        //Increment retry counter for a provider. GLoval retry count is specified for all providers.
+                        //Increment retry counter for a provider. GLoиal retry count is specified for all providers.
                         //When this counter is reached provider should be switched to a reserve one
                         //I.e. main provider by default is Infobip, reserve is GMSu.
                         //After MaxRetryCount to Infobip we should switch to GMSu
@@ -118,6 +123,13 @@ public class RabbitConsumer implements JMSConsumer {
 
                     //TODO Acquire message delivery status
                 } else {
+
+                    if (messageSentStatus.getMessageId() != null && !messageSentStatus.getMessageId().isEmpty()) {
+                        messageDto.setProviderId(appState.getCurrentProviderId());
+                        messageDto.setMessageId(messageSentStatus.getMessageId());
+                        jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.LOW_PRIORITY);
+                    }
+
                     if (appState.getCurrentProviderId() != config.getDefaultProviderId()) {
 
                         long milis = System.currentTimeMillis() - appState.getReserveProviderStartTime().getTime();
@@ -126,16 +138,12 @@ public class RabbitConsumer implements JMSConsumer {
                             switchProvider();
                         }
                     }
-                    if (messageSentStatus.getMessageId() != null) {
-
-                        jmsClient.sendJMSMessage("Low priority message", JMSClient.LOW_PRIORITY);
-                    }
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                             new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
                 }
                 break;
             case JMSClient.LOW_PRIORITY:
-                System.out.println("RabbitConsumer." + delivery.getBody());
+                messageSender.requestDeliveryReport(messageDto);
                 break;
             default:
                 break;
