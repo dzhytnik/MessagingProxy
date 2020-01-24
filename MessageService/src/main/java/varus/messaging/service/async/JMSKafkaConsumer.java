@@ -74,8 +74,6 @@ public class JMSKafkaConsumer implements JMSConsumer{
                     e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
-                } catch (UnirestException e) {
-                    e.printStackTrace();
                 }
                 System.out.printf("Consumer Record:(%d, %s, %d, %d)\n",
                         record.key(), record.value(),

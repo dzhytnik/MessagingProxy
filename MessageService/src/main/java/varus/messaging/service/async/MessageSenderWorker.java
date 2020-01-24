@@ -46,7 +46,7 @@ public class MessageSenderWorker implements MessageSender{
     private int clientId;
 
 
-    public MessageProviderResponse sendMessage(MessageDTO messageDTO) throws UnirestException{
+    public MessageProviderResponse sendMessage(MessageDTO messageDTO){
         String textToSend = messageDTO.getMessageText();
         String phoneNumber = messageDTO.getRecepientList().get(0);
 
@@ -99,6 +99,8 @@ public class MessageSenderWorker implements MessageSender{
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (UnirestException e) {
+                e.printStackTrace();
             }
 
         } else if (channelId == INFOBIP_CHANNEL){
@@ -127,11 +129,13 @@ public class MessageSenderWorker implements MessageSender{
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (UnirestException e) {
+                e.printStackTrace();
             }
         }
 
         return MessageProviderResponse.builder()
-                .responseCode(response.getStatus())
+                .responseCode(response == null ? -1 : response.getStatus())
                 .messageId(messageId)
                 .statusCode(messageSentStatus).build();
     }

@@ -61,11 +61,11 @@ public class RabbitConsumer implements JMSConsumer {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            channel.basicConsume(QUEUE_NAME, true, highPriorityDeliverCallback, consumerTag -> { });
+            Map<String, Object> props = new HashMap<>();
+            props.put("x-max-priority", 3);
 
-            channel.queueDeclare(REPORT_QUEUE_NAME, false, false, false, null);
-            channel.basicConsume(REPORT_QUEUE_NAME, true,lowPriorityDeliverCallback, consumerTag -> { });
+            channel.queueDeclare(QUEUE_NAME, false, false, false, props);
+            channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -75,69 +75,72 @@ public class RabbitConsumer implements JMSConsumer {
 
     }
 
-    private DeliverCallback lowPriorityDeliverCallback = (consumerTag, delivery) -> {
-        String message = new String(delivery.getBody(), "UTF-8");
-        ObjectMapper objectMapper = new ObjectMapper();
-        System.out.println("RabbitConsumer. Low priority");
 
-    };
+    private DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+        int priority = delivery.getProperties().getPriority();
+        switch (priority) {
+            case JMSClient.HIGH_PRIORITY: case JMSClient.MEDIUM_PRIORITY:
 
-    private DeliverCallback highPriorityDeliverCallback = (consumerTag, delivery) -> {
-        String message = new String(delivery.getBody(), "UTF-8");
-        ObjectMapper objectMapper = new ObjectMapper();
-        MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
-        try {
-            MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
-            ClientConfig clientConfig = clientConfigRepository.findById(messageDto.getClientId()).get();
-            Config config = configRepository.findById(1L).get();
+                String message = new String(delivery.getBody(), "UTF-8");
+                ObjectMapper objectMapper = new ObjectMapper();
+                MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
+                MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
+                ClientConfig clientConfig = clientConfigRepository.findById(messageDto.getClientId()).get();
+                Config config = configRepository.findById(1L).get();
 
-            if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK) {
+                if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK) {
 
-                if (messageDto.getRetryCount() < clientConfig.getNumberOfAttempts()) {
-                    //Increment retry counter for a provider. GLoval retry count is specified for all providers.
-                    //When this counter is reached provider should be switched to a reserve one
-                    //I.e. main provider by default is Infobip, reserve is GMSu.
-                    //After MaxRetryCount to Infobip we should switch to GMSu
-                    if (appState.getCurrentProviderTryCount() < config.getNumberOfAttempts()) {
-                        appState.incrCurrentProviderTryCount();
+                    if (messageDto.getRetryCount() < clientConfig.getNumberOfAttempts()) {
+                        //Increment retry counter for a provider. GLoval retry count is specified for all providers.
+                        //When this counter is reached provider should be switched to a reserve one
+                        //I.e. main provider by default is Infobip, reserve is GMSu.
+                        //After MaxRetryCount to Infobip we should switch to GMSu
+                        if (appState.getCurrentProviderTryCount() < config.getNumberOfAttempts()) {
+                            appState.incrCurrentProviderTryCount();
+                        } else {
+                            switchProvider();
+                        }
+
+                        //Increment retry count for this specific message. This is not related to current provider.
+                        //Each client should have each own retry count
+                        messageDto.incrRetryCount();
+
+                        jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
+
+                        messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                                new Date(), messageSentStatus.getResponseCode(), "0"));
+
+
                     } else {
-                        switchProvider();
+                        messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
+                                new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
                     }
 
-                    //Increment retry count for this specific message. This is not related to current provider.
-                    //Each client should have each own retry count
-                    messageDto.incrRetryCount();
-
-                    jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
-
-                    messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
-                            new Date(), messageSentStatus.getResponseCode(), "0"));
-
-
+                    //TODO Acquire message delivery status
                 } else {
+                    if (appState.getCurrentProviderId() != config.getDefaultProviderId()) {
+
+                        long milis = System.currentTimeMillis() - appState.getReserveProviderStartTime().getTime();
+                        //SecondaryChannelTimeSlot - parameter in minutes to send into reserve channel
+                        if (milis / 1000 / 60 > config.getSecondaryChannelTimeslot()) {
+                            switchProvider();
+                        }
+                    }
+                    if (messageSentStatus.getMessageId() != null) {
+
+                        jmsClient.sendJMSMessage("Low priority message", JMSClient.LOW_PRIORITY);
+                    }
                     messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                             new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
                 }
+                break;
+            case JMSClient.LOW_PRIORITY:
+                System.out.println("RabbitConsumer." + delivery.getBody());
+                break;
+            default:
+                break;
 
-                //TODO Acquire message delivery status
-            } else {
-                if (appState.getCurrentProviderId() != config.getDefaultProviderId()) {
 
-                    long milis = System.currentTimeMillis() - appState.getReserveProviderStartTime().getTime();
-                    //SecondaryChannelTimeSlot - parameter in minutes to send into reserve channel
-                    if (milis / 1000 / 60 > config.getSecondaryChannelTimeslot()) {
-                        switchProvider();
-                    }
-                }
-                if (messageSentStatus.getMessageId() != null) {
-
-                    jmsClient.sendJMSMessage("");
-                }
-                messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
-                        new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
-            }
-        } catch (UnirestException e) {
-            e.printStackTrace();
         }
     };
 

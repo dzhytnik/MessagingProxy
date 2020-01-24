@@ -23,7 +23,7 @@ public class RabbitClient implements JMSClient{
         Channel channel = connection.createChannel();
 
         Map<String, Object> props = new HashMap<>();
-        props.put("x-max-priority", 2);
+        props.put("x-max-priority", 3);
 
         channel.queueDeclare(VARUS_MESSAGING_QUEUE, false, false, false, props);
     }
