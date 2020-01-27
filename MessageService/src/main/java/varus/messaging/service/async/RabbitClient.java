@@ -1,10 +1,14 @@
 package varus.messaging.service.async;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import varus.messaging.service.bean.MessageDTO;
+import varus.messaging.service.dao.ClientConfigRepository;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,7 +17,11 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 public class RabbitClient implements JMSClient{
-    public static final String VARUS_MESSAGING_QUEUE = "varus-messaging-queue";
+    @Autowired
+    ClientConfigRepository clientConfigRepository;
+
+    public static final String QUEUE_NAME = "varus-messaging-queue";
+    public static final String AD_QUEUE_NAME = "varus-messaging-ad-queue";
     ConnectionFactory factory;
 
     private RabbitClient()  throws Exception{
@@ -25,11 +33,12 @@ public class RabbitClient implements JMSClient{
         Map<String, Object> props = new HashMap<>();
         props.put("x-max-priority", 3);
 
-        channel.queueDeclare(VARUS_MESSAGING_QUEUE, false, false, false, props);
+        channel.queueDeclare(QUEUE_NAME, false, false, false, props);
+        channel.queueDeclare(AD_QUEUE_NAME, false, false, false, null);
     }
 
     @Override
-    public void sendJMSMessage(String message, int priority) {
+    public void sendJMSMessage(MessageDTO messageDTO, int priority) {
         try {
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
@@ -38,7 +47,13 @@ public class RabbitClient implements JMSClient{
             basicProps.contentType("text/plain")
                     .priority(priority);
 
-            channel.basicPublish("", VARUS_MESSAGING_QUEUE, basicProps.build(), message.getBytes());
+            ObjectMapper objectMapper = new ObjectMapper();
+            if (clientConfigRepository.findById(messageDTO.getClientId()).get().getTimeWindowRestricted()) {
+                channel.basicPublish("", AD_QUEUE_NAME, basicProps.build(), objectMapper.writeValueAsString(messageDTO).getBytes());
+            } else {
+                channel.basicPublish("", QUEUE_NAME, basicProps.build(), objectMapper.writeValueAsString(messageDTO).getBytes());
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TimeoutException e) {
@@ -46,8 +61,8 @@ public class RabbitClient implements JMSClient{
         }
     }
 
-    public void sendJMSMessage(String message) {
-        sendJMSMessage(message, JMSClient.LOW_PRIORITY);
+    public void sendJMSMessage(MessageDTO messageDTO) {
+        sendJMSMessage(messageDTO, JMSClient.LOW_PRIORITY);
     }
 
 }

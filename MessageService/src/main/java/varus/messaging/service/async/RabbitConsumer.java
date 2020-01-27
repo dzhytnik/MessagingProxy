@@ -8,6 +8,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import varus.messaging.dao.bean.ClientConfig;
 import varus.messaging.dao.bean.Config;
@@ -50,30 +51,69 @@ public class RabbitConsumer implements JMSConsumer {
     MessagingServiceAppState appState;
 
     private static final String QUEUE_NAME = "varus-messaging-queue";
-    private static final String REPORT_QUEUE_NAME = "varus-messaging-report--queue";
+    private static final String AD_QUEUE_NAME = "varus-messaging-ad-queue";
 
-    @Override
-    public void runConsumer() throws InterruptedException {
-        ConnectionFactory factory = new ConnectionFactory();
+    ConnectionFactory factory = null;
+    Connection connection = null;
+
+    public RabbitConsumer() {
+        factory = new ConnectionFactory();
         factory.setHost("localhost");
-        Connection connection = null;
         try {
             connection = factory.newConnection();
-            Channel channel = connection.createChannel();
-
-            Map<String, Object> props = new HashMap<>();
-            props.put("x-max-priority", 3);
-
-            channel.queueDeclare(QUEUE_NAME, false, false, false, props);
-            channel.basicConsume(QUEUE_NAME, true, deliverCallback, consumerTag -> { });
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TimeoutException e) {
             e.printStackTrace();
         }
+    }
+
+
+    @Override
+    public void runConsumer() throws InterruptedException {
+        try {
+            Channel channel = connection.createChannel();
+
+            Map<String, Object> props = new HashMap<>();
+            props.put("x-max-priority", 3);
+
+            channel.queueDeclare(RabbitClient.QUEUE_NAME, false, false, false, props);
+            channel.basicConsume(RabbitClient.QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
+
+    //Runs in scheduled time. Used for advertisement messages which are not good to be sent
+    //outside the specified time frame. This time frame is configured in the DB
+    //ad_time_window_start and ad_time_window_end are the parameters for this
+    //These are the CRON formatted lines, see https://www.baeldung.com/cron-expressions for more detailes
+    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowStart()}")
+    public void runConsumerForAdMessages(){
+        try {
+            Channel channel = connection.createChannel();
+
+            channel.queueDeclare(RabbitClient.AD_QUEUE_NAME, false, false, false, null);
+            channel.basicConsume(RabbitClient.AD_QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowEnd()}")
+    public void shutdouwnConsumerForAdMessages(){
+        try {
+            Channel channel = connection.createChannel();
+            channel.queueDelete(RabbitClient.AD_QUEUE_NAME);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
 
     private DeliverCallback deliverCallback = (consumerTag, delivery) -> {
@@ -110,7 +150,7 @@ public class RabbitConsumer implements JMSConsumer {
                         //Each client should have each own retry count
                         messageDto.incrRetryCount();
 
-                        jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
+                        jmsClient.sendJMSMessage(messageDto, JMSClient.HIGH_PRIORITY);
 
                         messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                                 new Date(), messageSentStatus.getResponseCode(), "0"));
@@ -127,7 +167,7 @@ public class RabbitConsumer implements JMSConsumer {
                     if (messageSentStatus.getMessageId() != null && !messageSentStatus.getMessageId().isEmpty()) {
                         messageDto.setProviderId(appState.getCurrentProviderId());
                         messageDto.setMessageId(messageSentStatus.getMessageId());
-                        jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.LOW_PRIORITY);
+                        jmsClient.sendJMSMessage(messageDto, JMSClient.LOW_PRIORITY);
                     }
 
                     if (appState.getCurrentProviderId() != config.getDefaultProviderId()) {

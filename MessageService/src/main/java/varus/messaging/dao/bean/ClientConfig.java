@@ -16,6 +16,8 @@ public class ClientConfig {
     Integer priority;
     @Column(name="failover_sms_allowed")
     Boolean failoverSmsAllowed;
+    @Column(name="time_window_restricted")
+    Boolean timeWindowRestricted;
 
     public String getName() {
         return name;
@@ -31,5 +33,9 @@ public class ClientConfig {
 
     public Boolean getFailoverSmsAllowed() {
         return failoverSmsAllowed;
+    }
+
+    public Boolean getTimeWindowRestricted() {
+        return timeWindowRestricted;
     }
 }

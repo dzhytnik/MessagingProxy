@@ -16,6 +16,10 @@ public class Config {
     private int secondaryChannelTimeslot;
     @Column(name="default_provider_id")
     private Long defaultProviderId;
+    @Column(name="ad_time_window_start")
+    private String adTimeWindowStart;
+    @Column(name="ad_time_window_end")
+    private String adTimeWindowEnd;
 
     public int getNumberOfAttempts() {
         return numberOfAttempts;
@@ -27,5 +31,13 @@ public class Config {
 
     public Long getDefaultProviderId() {
         return defaultProviderId;
+    }
+
+    public String getAdTimeWindowStart() {
+        return adTimeWindowStart;
+    }
+
+    public String getAdTimeWindowEnd() {
+        return adTimeWindowEnd;
     }
 }

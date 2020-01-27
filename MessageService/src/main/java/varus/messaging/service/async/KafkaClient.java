@@ -4,6 +4,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.stereotype.Component;
+import varus.messaging.service.bean.MessageDTO;
 
 import java.util.Properties;
 
@@ -36,4 +37,8 @@ public class KafkaClient implements JMSClient {
         producer.send(new ProducerRecord<String, String>(VARUS_MESSAGING_TOPIC, message));
     }
 
+    @Override
+    public void sendJMSMessage(MessageDTO messageDTO, int priority) {
+
+    }
 }

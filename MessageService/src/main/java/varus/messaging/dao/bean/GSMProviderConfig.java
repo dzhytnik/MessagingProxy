@@ -18,6 +18,9 @@ public class GSMProviderConfig {
     @Column(name="secondary_url")
     private String secondaryUrl;
 
+    @Column(name="report_url")
+    private String reportUrl;
+
     private String username;
 
     @Column(name="user_password")
@@ -41,5 +44,9 @@ public class GSMProviderConfig {
 
     public String getUserPassword() {
         return userPassword;
+    }
+
+    public String getReportUrl() {
+        return reportUrl;
     }
 }

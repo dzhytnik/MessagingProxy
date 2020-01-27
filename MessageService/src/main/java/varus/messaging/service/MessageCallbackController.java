@@ -45,12 +45,8 @@ public class MessageCallbackController {
         }
 
         for (MessageDTO messageDto : messages.getMessages()) {
-            try {
-                messageDto.setClientId(clientId);
-                jmsClient.sendJMSMessage(objectMapper.writeValueAsString(messageDto), JMSClient.HIGH_PRIORITY);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+            messageDto.setClientId(clientId);
+            jmsClient.sendJMSMessage(messageDto, JMSClient.HIGH_PRIORITY);
         }
 
         return "OK";
