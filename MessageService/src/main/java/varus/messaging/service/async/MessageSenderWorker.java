@@ -23,10 +23,8 @@ import varus.messaging.service.bean.common.BaseProviderMessage;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+
 
 @Component
 public class MessageSenderWorker extends BaseMessageSender{
@@ -38,9 +36,6 @@ public class MessageSenderWorker extends BaseMessageSender{
 
     public static final int INFOBIP_CHANNEL = 1;
     public static final int GMSU_CHANNEL = 2;
-
-
-    private static final String LINE_SEPARATOR = ",\r\n";
 
     private final long INFOBIP_STATUS_PENDING = 1;
     private final long INFOBIP_STATUS_UNDELIVERABLE = 2;
@@ -89,8 +84,8 @@ public class MessageSenderWorker extends BaseMessageSender{
                 //TODO
                 //TODO
                 //Uncomment this!!! Now stubbed due to GMSu inaccessibility
-                //GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
-                GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"594e7472-68d3-4820-ac20-738cdde6d072\"}", GMSuResponse.class);
+                GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
+                //GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"594e7472-68d3-4820-ac20-738cdde6d072\"}", GMSuResponse.class);
                 if (gmsuResponse.getMessageId() != null) {
                     messageId = gmsuResponse.getMessageId();
                     messageSentStatus = 1;

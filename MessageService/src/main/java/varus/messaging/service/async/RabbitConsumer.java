@@ -133,10 +133,10 @@ public class RabbitConsumer implements JMSConsumer {
                 MessageProviderResponse messageSentStatus = messageSender.sendMessage(messageDto);
 
 
-                if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK) {
+                if (messageSentStatus.getResponseCode() != HttpStatus.SC_OK || messageSentStatus.getStatusCode() != 1) {
 
                     if (messageDto.getRetryCount() < clientConfig.getNumberOfAttempts()) {
-                        //Increment retry counter for a provider. GLoиal retry count is specified for all providers.
+                        //Increment retry counter for a provider. Global retry count is specified for all providers.
                         //When this counter is reached provider should be switched to a reserve one
                         //I.e. main provider by default is Infobip, reserve is GMSu.
                         //After MaxRetryCount to Infobip we should switch to GMSu
@@ -164,16 +164,21 @@ public class RabbitConsumer implements JMSConsumer {
                     //TODO Acquire message delivery status
                 } else {
 
+                    //If we get the messageId which means the message was sent we need to get a report
+                    //LOW priority queue is responsible for reports
                     if (messageSentStatus.getMessageId() != null && !messageSentStatus.getMessageId().isEmpty()) {
                         messageDto.setProviderId(appState.getCurrentProviderId());
                         messageDto.setMessageId(messageSentStatus.getMessageId());
                         jmsClient.sendJMSMessage(messageDto, JMSClient.LOW_PRIORITY);
                     }
 
+
+                    //If reserve provider is used we need to countdown a timeout
                     if (appState.getCurrentProviderId() != config.getDefaultProviderId()) {
 
+                        //Switching back to the main provider after timeout reached.
                         long milis = System.currentTimeMillis() - appState.getReserveProviderStartTime().getTime();
-                        //SecondaryChannelTimeSlot - parameter in minutes to send into reserve channel
+                        //SecondaryChannelTimeSlot - parameter in minutes to send into main channel
                         if (milis / 1000 / 60 > config.getSecondaryChannelTimeslot()) {
                             switchProvider();
                         }
