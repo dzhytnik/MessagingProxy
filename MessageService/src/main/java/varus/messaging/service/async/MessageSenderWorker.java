@@ -84,8 +84,8 @@ public class MessageSenderWorker extends BaseMessageSender{
                 //TODO
                 //TODO
                 //Uncomment this!!! Now stubbed due to GMSu inaccessibility
-                GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
-                //GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"594e7472-68d3-4820-ac20-738cdde6d072\"}", GMSuResponse.class);
+                //GMSuResponse gmsuResponse = objectMapper.readValue(response.getBody().toString(), GMSuResponse.class);
+                GMSuResponse gmsuResponse = objectMapper.readValue("{\"message_id\" :\"594e7472-68d3-4820-ac20-738cdde6d072\"}", GMSuResponse.class);
                 if (gmsuResponse.getMessageId() != null) {
                     messageId = gmsuResponse.getMessageId();
                     messageSentStatus = 1;

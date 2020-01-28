@@ -4,7 +4,7 @@ import java.util.List;
 
 public class MessageDTO {
     Long clientId;
-    Integer retryCount = 0;
+    Integer retryCount = 1;
     List<String> channels;
     List<String> recepientList;
     String messageText;

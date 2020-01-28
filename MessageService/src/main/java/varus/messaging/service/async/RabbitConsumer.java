@@ -53,8 +53,11 @@ public class RabbitConsumer implements JMSConsumer {
     private static final String QUEUE_NAME = "varus-messaging-queue";
     private static final String AD_QUEUE_NAME = "varus-messaging-ad-queue";
 
+    String adChannelConsumer;
+
     ConnectionFactory factory = null;
     Connection connection = null;
+    Channel channel = null;
 
     public RabbitConsumer() {
         factory = new ConnectionFactory();
@@ -66,13 +69,18 @@ public class RabbitConsumer implements JMSConsumer {
         } catch (TimeoutException e) {
             e.printStackTrace();
         }
+        try {
+            runConsumer();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
     @Override
     public void runConsumer() throws InterruptedException {
         try {
-            Channel channel = connection.createChannel();
+            channel = connection.createChannel();
 
             Map<String, Object> props = new HashMap<>();
             props.put("x-max-priority", 3);
@@ -80,6 +88,8 @@ public class RabbitConsumer implements JMSConsumer {
             channel.queueDeclare(RabbitClient.QUEUE_NAME, false, false, false, props);
             channel.basicConsume(RabbitClient.QUEUE_NAME, true, deliverCallback, consumerTag -> { });
 
+            channel.queueDeclare(RabbitClient.AD_QUEUE_NAME, false, false, false, null);
+            adChannelConsumer = channel.basicConsume(RabbitClient.AD_QUEUE_NAME, true, deliverCallback, consumerTag -> { });
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -90,24 +100,22 @@ public class RabbitConsumer implements JMSConsumer {
     //outside the specified time frame. This time frame is configured in the DB
     //ad_time_window_start and ad_time_window_end are the parameters for this
     //These are the CRON formatted lines, see https://www.baeldung.com/cron-expressions for more detailes
-    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowStart()}")
+    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowEnd()}")
     public void runConsumerForAdMessages(){
         try {
-            Channel channel = connection.createChannel();
-
-            channel.queueDeclare(RabbitClient.AD_QUEUE_NAME, false, false, false, null);
-            channel.basicConsume(RabbitClient.AD_QUEUE_NAME, true, deliverCallback, consumerTag -> { });
+            System.out.println("Enabling ad messaging");
+            adChannelConsumer = channel.basicConsume(RabbitClient.AD_QUEUE_NAME, true, deliverCallback, consumerTag -> { });
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
 
-    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowEnd()}")
+    @Scheduled(cron = "#{@applicationPropertyService.getTimeWindowStart()}")
     public void shutdouwnConsumerForAdMessages(){
         try {
-            Channel channel = connection.createChannel();
-            channel.queueDelete(RabbitClient.AD_QUEUE_NAME);
+            System.out.println("Disabling ad messaging");
+            channel.basicCancel(adChannelConsumer);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -122,6 +130,8 @@ public class RabbitConsumer implements JMSConsumer {
         String message = new String(delivery.getBody(), "UTF-8");
         ObjectMapper objectMapper = new ObjectMapper();
         MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
+
+        System.out.println("RabbitConsumer." + delivery.toString());
 
         switch (priority) {
             case JMSClient.HIGH_PRIORITY: case JMSClient.MEDIUM_PRIORITY:
@@ -161,7 +171,7 @@ public class RabbitConsumer implements JMSConsumer {
                                 new Date(), messageSentStatus.getResponseCode(), messageSentStatus.getMessageId()));
                     }
 
-                    //TODO Acquire message delivery status
+
                 } else {
 
                     //If we get the messageId which means the message was sent we need to get a report

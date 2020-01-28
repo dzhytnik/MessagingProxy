@@ -35,13 +35,6 @@ public class ConfigLoader {
         config = configRepository.findById(1l).get();
         infobipConfig = providerRepository.findByProviderName("Infobip");
         gmsuConfig = providerRepository.findByProviderName("gmsu");
-
-        //Starting consumer for messages. Messages are put into the queue by the controller.
-        try {
-            jmsConsumer.runConsumer();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     public Config getConfig() {
