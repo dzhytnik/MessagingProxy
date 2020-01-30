@@ -34,7 +34,7 @@ public class RabbitClient implements JMSClient{
         props.put("x-max-priority", 3);
 
         channel.queueDeclare(QUEUE_NAME, false, false, false, props);
-        channel.queueDeclare(AD_QUEUE_NAME, false, false, false, null);
+        channel.queueDeclare(AD_QUEUE_NAME, false, false, false, props);
     }
 
     @Override

@@ -15,6 +15,7 @@ public class MessageDTO {
 
     Long providerId;
     String messageId;
+    String internalMessageId;
 
     public Long getClientId() {
         return clientId;
@@ -74,6 +75,14 @@ public class MessageDTO {
 
     public void incrRetryCount() {
         this.retryCount++;
+    }
+
+    public String getInternalMessageId() {
+        return internalMessageId;
+    }
+
+    public void setInternalMessageId(String internalMessageId) {
+        this.internalMessageId = internalMessageId;
     }
 }
 

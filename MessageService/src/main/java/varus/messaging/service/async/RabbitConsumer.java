@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 @Service
 public class RabbitConsumer implements JMSConsumer {
@@ -88,7 +88,7 @@ public class RabbitConsumer implements JMSConsumer {
             channel.queueDeclare(RabbitClient.QUEUE_NAME, false, false, false, props);
             channel.basicConsume(RabbitClient.QUEUE_NAME, true, deliverCallback, consumerTag -> { });
 
-            channel.queueDeclare(RabbitClient.AD_QUEUE_NAME, false, false, false, null);
+            channel.queueDeclare(RabbitClient.AD_QUEUE_NAME, false, false, false, props);
             adChannelConsumer = channel.basicConsume(RabbitClient.AD_QUEUE_NAME, true, deliverCallback, consumerTag -> { });
         } catch (IOException e) {
             e.printStackTrace();
@@ -131,8 +131,6 @@ public class RabbitConsumer implements JMSConsumer {
         ObjectMapper objectMapper = new ObjectMapper();
         MessageDTO messageDto = objectMapper.readValue(message, MessageDTO.class);
 
-        System.out.println("RabbitConsumer." + delivery.toString());
-
         switch (priority) {
             case JMSClient.HIGH_PRIORITY: case JMSClient.MEDIUM_PRIORITY:
 
@@ -160,7 +158,18 @@ public class RabbitConsumer implements JMSConsumer {
                         //Each client should have each own retry count
                         messageDto.incrRetryCount();
 
-                        jmsClient.sendJMSMessage(messageDto, JMSClient.HIGH_PRIORITY);
+                        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                        scheduler.schedule(new Callable<Integer>() {
+                            @Override
+                            public Integer call() throws Exception {
+
+                                jmsClient.sendJMSMessage(messageDto, JMSClient.HIGH_PRIORITY);
+                                return null;
+                            }
+                        }, 2, TimeUnit.SECONDS);
+
+
+
 
                         messageLogRepository.save(new MessageLogRecord(messageDto.getRecepientList().get(0), messageDto.getMessageText(),
                                 new Date(), messageSentStatus.getResponseCode(), "0"));
@@ -189,7 +198,7 @@ public class RabbitConsumer implements JMSConsumer {
                         //Switching back to the main provider after timeout reached.
                         long milis = System.currentTimeMillis() - appState.getReserveProviderStartTime().getTime();
                         //SecondaryChannelTimeSlot - parameter in minutes to send into main channel
-                        if (milis / 1000 / 60 > config.getSecondaryChannelTimeslot()) {
+                        if (milis / 1000 / 60 >= config.getSecondaryChannelTimeslot()) {
                             switchProvider();
                         }
                     }

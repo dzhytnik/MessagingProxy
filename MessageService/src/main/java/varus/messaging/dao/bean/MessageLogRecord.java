@@ -19,6 +19,8 @@ public class MessageLogRecord {
     long sendingStatus;
     @Column(name="message_id")
     String messageId;
+    @Column(name="internal_message_id")
+    String intMessageId;
 
     public MessageLogRecord(String recipientList, String message, Date date, long sendingStatus, String messageId) {
         this.recipientList = recipientList;

@@ -14,7 +14,7 @@ public class MessagingServiceAppState implements InitializingBean {
 
     Long currentProviderId;
 
-    Long currentProviderTryCount = 0L;
+    Long currentProviderTryCount = 1L;
 
     Date reserveProviderStartTime;
 
