@@ -253,7 +253,7 @@ public class MessageSenderWorker extends BaseMessageSender{
                                      requestDeliveryReport(messageDTO);
                                      return null;
                                  }
-                             }, 10, TimeUnit.SECONDS);
+                             }, 60, TimeUnit.SECONDS);
 
                  }
             } catch (UnirestException e) {
