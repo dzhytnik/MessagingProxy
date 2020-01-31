@@ -10,12 +10,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class BaseMessageSender {
+    public static final String APPLICATION_JSON = "application/json";
     @Autowired
     ConfigLoader configLoader;
 
     protected Map<String, String> constructInfobipHeaders() {
         Map resultMap = new HashMap();
-        resultMap.put("Content-Type", "application/json");
+        resultMap.put("Content-Type", APPLICATION_JSON);
         resultMap.put("Authorization", "App " + configLoader.getInfobipConfig().getUsername());
         return resultMap;
     }
@@ -29,7 +30,7 @@ public abstract class BaseMessageSender {
         String encodedBytes = Base64.getEncoder().encodeToString(authorization.getBytes());
         authorization = "Basic " + encodedBytes;
 
-        resultMap.put("Content-Type", "application/json");
+        resultMap.put("Content-Type", APPLICATION_JSON);
         resultMap.put("Authorization", authorization);
         return resultMap;
     }
