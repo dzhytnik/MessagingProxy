@@ -20,6 +20,12 @@ public class Config {
     private String adTimeWindowStart;
     @Column(name="ad_time_window_end")
     private String adTimeWindowEnd;
+    @Column(name="auth_user_name")
+    private String authUserName;
+    @Column(name="auth_password")
+    private String authPassword;
+
+
 
     public int getNumberOfAttempts() {
         return numberOfAttempts;
@@ -39,5 +45,13 @@ public class Config {
 
     public String getAdTimeWindowEnd() {
         return adTimeWindowEnd;
+    }
+
+    public String getAuthUserName() {
+        return authUserName;
+    }
+
+    public String getAuthPassword() {
+        return authPassword;
     }
 }

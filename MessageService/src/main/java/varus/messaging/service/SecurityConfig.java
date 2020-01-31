@@ -10,9 +10,11 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    ApplicationPropertyService applicationPropertyService;
+
     @Override
-    protected void configure(HttpSecurity http) throws Exception
-    {
+    protected void configure(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
                 .authorizeRequests().anyRequest().authenticated()
@@ -22,11 +24,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth)
-            throws Exception
-    {
+            throws Exception {
         auth.inMemoryAuthentication()
-                .withUser("admin")
-                .password("{noop}password")
+                .withUser(applicationPropertyService.getAuthUserName())
+                .password("{noop}" + applicationPropertyService.getAuthPassword())
                 .roles("USER");
+
     }
 }

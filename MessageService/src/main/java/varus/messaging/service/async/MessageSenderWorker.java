@@ -122,7 +122,7 @@ public class MessageSenderWorker extends BaseMessageSender{
                     Destination.builder().to(To.builder().phoneNumber(phoneNumber).build()).build())
                     .sms(smsText)
                     .viber(viberText)
-                    .scenarioKey("6CB8B6B51D49EA3049A0FA7BCA94AD51").build();
+                    .scenarioKey(configLoader.getInfobipConfig().getUserPassword()).build();
             ObjectMapper objectMapper = new ObjectMapper();
 
             try {
@@ -162,9 +162,11 @@ public class MessageSenderWorker extends BaseMessageSender{
         if (channelId == GMSU_CHANNEL) {
             try {
                 String reportUrl = String.format(configLoader.getGmsuConfig().getReportUrl(), messageDTO.getMessageId());
-                response = Unirest.get(reportUrl).headers(constructGmsuHeaders())
-                        .asString();
+                response = Unirest.get(reportUrl).headers(constructGmsuHeaders()).asString();
 
+                varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse deliveryReportResponse = objectMapper.readValue(response.getBody(),
+                        varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse.class);
+/*
                 String mockerResponse = "{\n" +
                         "    \"time\": 1550754417000,\n" +
                         "    \"substatus\": 23,\n" +
@@ -175,10 +177,6 @@ public class MessageSenderWorker extends BaseMessageSender{
                         "    \"hyber_status\": 23011,\n" +
                         "    \"extra_id\": \"AD-6640-7006\"\n" +
                         "}\n";
-                //TODO uncomment this stubbed behavior
-                varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse deliveryReportResponse = objectMapper.readValue(response.getBody(),
-                        varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse.class);
-/*
                 varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse deliveryReportResponse = objectMapper.readValue(mockerResponse,
                         varus.messaging.service.bean.GMSu.GMSuReport.DeliveryReportResponse.class);
 */

@@ -16,4 +16,12 @@ public class ApplicationPropertyService {
     public String getTimeWindowEnd(){
         return configRepository.findById(1l).get().getAdTimeWindowEnd();
     }
+
+    public String getAuthUserName() {
+        return  configRepository.findById(1l).get().getAuthUserName();
+    }
+
+    public String getAuthPassword() {
+        return  configRepository.findById(1l).get().getAuthPassword();
+    }
 }

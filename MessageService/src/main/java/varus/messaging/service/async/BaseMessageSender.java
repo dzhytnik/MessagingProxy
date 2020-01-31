@@ -16,7 +16,7 @@ public abstract class BaseMessageSender {
     protected Map<String, String> constructInfobipHeaders() {
         Map resultMap = new HashMap();
         resultMap.put("Content-Type", "application/json");
-        resultMap.put("Authorization", "App c7bb509341ec624a0a41de7754356208-7d2e4651-6117-4a75-be96-2ceb5683fc72");
+        resultMap.put("Authorization", "App " + configLoader.getInfobipConfig().getUsername());
         return resultMap;
     }
 
